@@ -2,11 +2,11 @@
 
 ## Úkol
 
-Vytvoriť presný bit-for-bit forenzný obraz úložného média. Zabezpečiť, že originál zostane neporušený a všetky dáta vrátane vymazaných súborov a nealokovaného priestoru sú zachytené.
+Vytvoriť forenzný obraz média.
 
 ## Obtiažnosť
 
-Snadné (proces je automatizovaný)
+Snadné
 
 ## Časová náročnosť
 
@@ -14,35 +14,31 @@ Snadné (proces je automatizovaný)
 
 ## Automatický test
 
-Áno - Python skript automaticky vytvorí forenzný obraz pomocou dc3dd, ddrescue alebo ewfacquire (podľa stavu média)
+Áno
 
 ## Popis
 
-Forenzný imaging je proces vytvárania presnej bitovej kópie úložného média. Na rozdiel od bežného kopírovania súborov, forenzný obraz zachytáva absolútne všetko - aktívne súbory, vymazané súbory, slack space, unallocated space, metadata.
-
-Prečo je tento krok kritický:
-- Originál zostáva neporušený - všetky analýzy sa robia na kópii
-- Zachytáva všetky dáta vrátane vymazaných súborov
-- Možnosť vytvorenia viacerých kópií bez opätovného prístupu k originálu
-- Súdna prípustnosť dôkazu
-- Reprodukovateľnosť procesu
-
-Výber nástroja: dc3dd (perfektné médium), ddrescue (poškodené médium s vadnými sektormi), ewfacquire (E01 formát s kompresiou a metadátami).
+Forenzný imaging je proces vytvárania presnej bitovej kópie úložného média, ktorá zachytáva absolútne všetko - aktívne súbory, vymazané súbory, slack space, nealokovaný priestor a metadata súborového systému. Na rozdiel od bežného kopírovania súborov, forenzný obraz je bit-for-bit identický s originálom. Originálne médium zostáva po celý proces pripojené cez write-blocker a všetky budúce analýzy sa vykonávajú výhradne na vytvorenej kópii, čím je zabezpečená súdna prípustnosť dôkazu a reprodukovateľnosť procesu. Výber imaging nástroja závisí od stavu média - dc3dd pre bezvadné médiá, ddrescue pre médiá s vadnými sektormi, alebo ewfacquire pre E01 formát s kompresiou.
 
 ## Jak na to
 
-1. Overenie write-blockera - test zápisu musí zlyhať (zariadenie read-only)
-2. Príprava cieľového úložiska - musí mať aspoň 110% veľkosti média
-3. Výber imaging nástroja - dc3dd (ak Readability score ≥90), ddrescue (ak <90), ewfacquire (pre E01 formát)
-4. Spustenie imaging procesu - vytvorenie bit-for-bit kópie celého média
-5. Monitoring priebehu - sledovanie rýchlosti, času, chybových sektorov
-6. Generovanie log súboru - zaznamenanie detailov imaging procesu (nástroj, trvanie, chyby)
+Overte funkčnosť write-blockera pred začatím imaging procesu. Vykonajte test zápisu na pripojené médium - pokus o zápis musí zlyhať s chybovou hláškou, čím je potvrdené, že médium je skutočne v režime read-only a nemôže dôjsť k jeho modifikácii. Bez tejto verifikácie nikdy nepokračujte.
 
----
+Pripravte cieľové úložisko pre forenzný obraz. Uistite sa, že dostupný priestor je minimálne 110% kapacity zdrojového média - extra 10% je rezerva pre metadata, log súbory a prípadné chybové logy. Pre 64GB SD kartu potrebujete minimálne 70GB voľného miesta. Používajte rýchle SSD disky alebo RAID systém pre optimálnu rýchlosť imaging procesu.
+
+Systém automaticky vyberie vhodný imaging nástroj na základe výsledku Readability Test z Kroku 3. Ak médium dosiahlo skóre READABLE (všetky testy prešli), použije sa dc3dd nástroj vytvárajúci čistý bit-stream obraz s priebežným hashovaním. Ak médium dosiahlo PARTIAL (niektoré testy zlyhali, detekované vadné sektory), použije sa ddrescue nástroj optimalizovaný pre recovery z poškodených médií s možnosťou preskočenia nečitateľných blokov. Pre archiváciu alebo prípady vyžadujúce kompresiu je možné explicitne vybrať ewfacquire nástroj vytvárajúci E01 formát s metadátami a CRC kontrolami.
+
+Spustite imaging proces. Systém automaticky zostaví príkaz s optimálnymi parametrami - veľkosť bloku (typicky 1MB pre rýchlosť, 64KB pre poškodené médiá), cieľová cesta, a hash algoritmy (SHA-256 povinný, MD5 a SHA-1 voliteľné pre spätnú kompatibilitu). Imaging prebieha v jednom prechode, počas ktorého sú dáta kopírované a súčasne hashované.
+
+Monitorujte priebeh imaging procesu v reálnom čase. Systém zobrazuje aktuálnu rýchlosť čítania (MB/s), celkový prebežný čas, odhadovaný zostávajúci čas, množstvo skopírovaných dát, a pri ddrescue aj počet chybných sektorov a mapa ich umiestnenia. Pri veľmi pomalej rýchlosti (pod 1 MB/s) zvážte, či médium nie je kriticky poškodené.
+
+Po dokončení imaging procesu systém automaticky vygeneruje detailný log súbor. Log obsahuje identifikáciu Case ID, zdrojové zariadenie a cieľový súbor, použitý nástroj a verziu, presný príkaz ktorý bol spustený, časové značky začiatku a konca, trvanie v sekundách, celkovú veľkosť skopírovaných dát, priemerná rýchlosť, počet chybných blokov ak existujú, SHA-256 hash zdrojového média (vypočítaný počas imaging), a exit code procesu. Tento log je kritický pre Chain of Custody dokumentáciu.
+
+Archivujte vytvorený forenzný obraz, imaging log a hash súbory do Case dokumentácie. Originálne médium ponechajte pripojené cez write-blocker pre nasledujúci krok verifikácie integrity (Krok 6).
 
 ## Výsledek
 
-Forenzný obraz vytvorený (.dd, .raw alebo .E01 formát). Imaging log obsahuje detaily procesu. Originálne médium zostáva neporušené. Obraz je pripravený na verifikáciu integrity (Kroky 6, 8, 9).
+Forenzný obraz úspešne vytvorený v jednom z formátov: .dd alebo .raw pre raw bit-stream (dc3dd/ddrescue), alebo .E01 pre Expert Witness Format (ewfacquire). Vygenerovaný imaging log obsahuje kompletné detaily procesu vrátane použitého nástroja, trvania, rýchlosti a počtu chybných sektorov. SHA-256 hash zdrojového média vypočítaný a zaznamenaný. Originálne médium zostáva neporušené a pripojené pre verifikáciu. Workflow automaticky postúpi do Kroku 6 (Výpočet hashu originálneho média) pre overenie integrity.
 
 ## Reference
 
