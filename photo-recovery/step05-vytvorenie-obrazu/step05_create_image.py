@@ -188,17 +188,17 @@ class ForensicImaging:
         
         # Očakávame FAILURE (permission denied, read-only)
         if result["success"]:
-            self._print("✗ CRITICAL: Write-blocker NOT working! Write succeeded!", "ERROR")
-            self._print("✗ ABORT: Cannot proceed without write-blocker protection", "ERROR")
+            self._print("CRITICAL: Write-blocker NOT working! Write succeeded!", "ERROR")
+            self._print("ABORT: Cannot proceed without write-blocker protection", "ERROR")
             return False
         else:
             # Kontrola, či chyba je skutočne "read-only" a nie iná chyba
             error_msg = result.get("stderr", "").lower()
             if "read-only" in error_msg or "permission denied" in error_msg:
-                self._print("✓ Write-blocker verified: Device is read-only", "OK")
+                self._print("Write-blocker verified: Device is read-only", "OK")
                 return True
             else:
-                self._print(f"⚠ Unexpected error during write test: {error_msg}", "WARNING")
+                self._print(f"Unexpected error during write test: {error_msg}", "WARNING")
                 self._print("Please manually verify write-blocker status", "WARNING")
                 
                 confirm = input("Continue anyway? (yes/no): ").strip().lower()
@@ -236,10 +236,10 @@ class ForensicImaging:
         self._print(f"Available space: {available_gb:.2f} GB", "INFO")
         
         if stat.free < required_space:
-            self._print(f"✗ ERROR: Insufficient space! Need {required_gb:.2f} GB, have {available_gb:.2f} GB", "ERROR")
+            self._print(f"ERROR: Insufficient space! Need {required_gb:.2f} GB, have {available_gb:.2f} GB", "ERROR")
             return False
         else:
-            self._print(f"✓ Sufficient space available ({available_gb - required_gb:.2f} GB margin)", "OK")
+            self._print(f"Sufficient space available ({available_gb - required_gb:.2f} GB margin)", "OK")
             return True
     
     def create_image_dc3dd(self):
@@ -264,7 +264,7 @@ class ForensicImaging:
             "dc3dd",
             f"if={self.device}",
             f"of={image_file}",
-            f"hash=sha256",
+            "hash=sha256",
             f"log={log_file}",
             "bs=1M",
             "progress=on"
@@ -277,7 +277,7 @@ class ForensicImaging:
         duration = time.time() - start_time
         
         if result["success"]:
-            self._print(f"\n✓ Imaging completed in {duration:.0f} seconds", "OK")
+            self._print(f"\nImaging completed in {duration:.0f} seconds", "OK")
             
             # Získanie hash hodnoty z dc3dd výstupu
             # dc3dd píše hash do logu
@@ -312,7 +312,7 @@ class ForensicImaging:
             
             return True
         else:
-            self._print(f"\n✗ Imaging failed: {result.get('output', 'Unknown error')}", "ERROR")
+            self._print(f"\nImaging failed: {result.get('output', 'Unknown error')}", "ERROR")
             return False
     
     def create_image_ddrescue(self):
@@ -349,7 +349,7 @@ class ForensicImaging:
         duration = time.time() - start_time
         
         if result["success"] or result["returncode"] == 0:
-            self._print(f"\n✓ Imaging completed in {duration:.0f} seconds", "OK")
+            self._print(f"\nImaging completed in {duration:.0f} seconds", "OK")
             
             # ddrescue môže skončiť s returncode 0 aj keď má bad blocks
             # Parsovanie mapfile pre zistenie počtu chybných sektorov
@@ -362,31 +362,38 @@ class ForensicImaging:
                     self.results["error_sectors"] = bad_blocks
                     
                     if bad_blocks > 0:
-                        self._print(f"⚠ WARNING: {bad_blocks} bad sectors detected", "WARNING")
+                        self._print(f"WARNING: {bad_blocks} bad sectors detected", "WARNING")
                         self._print("Image is PARTIAL - some data may be unrecoverable", "WARNING")
                     else:
                         self._print("All sectors read successfully", "OK")
             
             # Výpočet SHA-256 hashu (ddrescue nemá built-in hashing)
             self._print("\nCalculating SHA-256 hash of source...", "INFO")
-            hash_result = self._run_command([
-                "dd",
-                f"if={self.device}",
-                "bs=1M",
-                "status=none",
-                "|",
-                "sha256sum"
-            ], timeout=7200, realtime_output=False)  # Max 2h pre hash
             
-            if hash_result["success"]:
-                source_hash = hash_result["stdout"].split()[0]
-                self.results["source_hash"] = source_hash
-                self._print(f"Source SHA-256: {source_hash}", "OK")
+            # FIXED: Use shell=True for piped command
+            hash_cmd = f"dd if={self.device} bs=1M status=none | sha256sum"
+            try:
+                hash_result = subprocess.run(
+                    hash_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=7200
+                )
                 
-                # Uloženie hashu
-                hash_file = self.output_dir / f"{self.case_id}.dd.sha256"
-                with open(hash_file, 'w') as hf:
-                    hf.write(f"{source_hash}  {image_file.name}\n")
+                if hash_result.returncode == 0:
+                    source_hash = hash_result.stdout.strip().split()[0]
+                    self.results["source_hash"] = source_hash
+                    self._print(f"Source SHA-256: {source_hash}", "OK")
+                    
+                    # Uloženie hashu
+                    hash_file = self.output_dir / f"{self.case_id}.dd.sha256"
+                    with open(hash_file, 'w') as hf:
+                        hf.write(f"{source_hash}  {image_file.name}\n")
+                else:
+                    self._print("WARNING: Could not calculate source hash", "WARNING")
+            except Exception as e:
+                self._print(f"WARNING: Hash calculation failed: {str(e)}", "WARNING")
             
             # Štatistiky
             file_size_mb = image_file.stat().st_size / (1024**2)
@@ -394,7 +401,7 @@ class ForensicImaging:
             
             # Zápis logu
             with open(log_file, 'w') as lf:
-                lf.write(f"=== DDRESCUE IMAGING LOG ===\n")
+                lf.write("=== DDRESCUE IMAGING LOG ===\n")
                 lf.write(f"Case ID: {self.case_id}\n")
                 lf.write(f"Source: {self.device}\n")
                 lf.write(f"Target: {image_file}\n")
@@ -402,7 +409,7 @@ class ForensicImaging:
                 lf.write(f"Duration: {duration:.2f} seconds\n")
                 lf.write(f"Bad sectors: {self.results['error_sectors']}\n")
                 lf.write(f"Average speed: {avg_speed/60:.2f} MB/s\n")
-                lf.write(f"\n=== DDRESCUE OUTPUT ===\n")
+                lf.write("\n=== DDRESCUE OUTPUT ===\n")
                 lf.write(result["output"])
             
             self.results["success"] = True
@@ -414,7 +421,7 @@ class ForensicImaging:
             
             return True
         else:
-            self._print(f"\n✗ Imaging failed: {result.get('output', 'Unknown error')}", "ERROR")
+            self._print(f"\nImaging failed: {result.get('output', 'Unknown error')}", "ERROR")
             return False
     
     def run_imaging(self):
@@ -472,7 +479,7 @@ class ForensicImaging:
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
         
-        self._print(f"✓ JSON report saved: {json_file}", "OK")
+        self._print(f"JSON report saved: {json_file}", "OK")
         return str(json_file)
 
 
@@ -503,7 +510,7 @@ def main():
         sys.exit(1)
     
     # Finálne potvrdenie
-    print("\n⚠ CRITICAL REMINDER:")
+    print("\nCRITICAL REMINDER:")
     print("- Media MUST be connected via write-blocker")
     print("- This process will take 1-3 hours")
     print("- Do not interrupt the process")
@@ -530,46 +537,53 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
 
----
 
-## **Key Features:**
+"""
+================================================================================
+DOCUMENTATION - KEY FEATURES
+================================================================================
 
-### ✅ **Intelligent Tool Selection**
-- Reads Step 3 JSON results
-- READABLE → dc3dd
-- PARTIAL → ddrescue
-- UNREADABLE → Error (needs Step 4 first)
+INTELLIGENT TOOL SELECTION
+- Reads Step 3 JSON results automatically
+- READABLE status -> dc3dd (fast, clean imaging)
+- PARTIAL status -> ddrescue (recovery mode for damaged media)
+- UNREADABLE status -> Error (requires Step 4 Physical Repair first)
 
-### ✅ **Write-Blocker Verification**
-- Attempts write test (must fail!)
-- Checks for "read-only" error message
-- **BLOCKS** imaging if test passes (critical safety!)
+WRITE-BLOCKER VERIFICATION
+- Attempts write test before imaging (must fail!)
+- Checks for "read-only" or "permission denied" error message
+- BLOCKS imaging if write protection not confirmed (critical safety!)
+- Manual override available with confirmation prompt
 
-### ✅ **Space Management**
-- Checks source device size
-- Requires 110% space on target
-- Prevents mid-imaging failures
+STORAGE SPACE MANAGEMENT
+- Checks source device size using blockdev
+- Requires 110% space on target (extra 10% for metadata/logs)
+- Prevents mid-imaging failures due to insufficient space
+- Shows clear error with space requirements
 
-### ✅ **Real-Time Progress**
-- Live output from dc3dd/ddrescue
-- Shows speed, ETA, bad sectors
+REAL-TIME PROGRESS MONITORING
+- Live output from dc3dd/ddrescue during imaging
+- Shows: speed (MB/s), ETA, total bytes copied
+- Bad sector count for damaged media (ddrescue)
+- Progress percentage for long operations
 
-### ✅ **Comprehensive Logging**
-- Imaging log with all details
-- SHA-256 hash calculation
-- JSON report for automation
+COMPREHENSIVE LOGGING
+- Detailed imaging log with all process details
+- SHA-256 hash calculation (built-in for dc3dd, separate for ddrescue)
+- JSON report for automation and chain of custody
+- Separate hash file (.sha256) for verification
 
-### ✅ **Bad Sector Handling**
-- ddrescue creates mapfile
-- Counts bad sectors
-- Warns if data is partial
+BAD SECTOR HANDLING
+- ddrescue creates mapfile tracking good/bad blocks
+- Counts bad sectors automatically from mapfile
+- Warns if image is PARTIAL (some data unrecoverable)
+- Continues imaging despite bad sectors (recovery mode)
 
----
+================================================================================
+EXAMPLE OUTPUT - SUCCESSFUL DC3DD IMAGING
+================================================================================
 
-## **Example Output:**
-```
 ======================================================================
 FORENSIC IMAGING PROCESS
 Case ID: PHOTO-2025-01-26-001
@@ -600,11 +614,20 @@ IMAGING WITH DC3DD
 dc3dd 7.2.646 started at 2025-01-26 16:23:15 +0000
 compiled options:
 command line: dc3dd if=/dev/sdb of=/mnt/user-data/outputs/PHOTO-2025-01-26-001.dd hash=sha256 log=...
-device size: 64043212800 bytes (60.0G)
+device size: 64043212800 bytes (60.0 GB)
 62000 MiB (61440000 bytes) copied (1%), 1.2 min @ 45.6 MiB/s
+124000 MiB (122880000 bytes) copied (2%), 2.5 min @ 47.2 MiB/s
 [... progress continues ...]
+60000000 MiB copied (100%), 87.3 min @ 46.8 MiB/s
+
+61035+0 records in
+61035+0 records out
+64043212800 bytes (64 GB) copied, 5234.12 s, 12.2 MB/s
+
+sha256: a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456
 
 [✓] Imaging completed in 5234 seconds
+[✓] Source SHA-256: a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456
 
 ======================================================================
 IMAGING COMPLETED SUCCESSFULLY
@@ -618,3 +641,206 @@ IMAGING COMPLETED SUCCESSFULLY
 
 Imaging completed successfully
 Next step: Step 6 (Hash verification)
+
+================================================================================
+EXAMPLE OUTPUT - DDRESCUE WITH BAD SECTORS
+================================================================================
+
+======================================================================
+IMAGING WITH DDRESCUE (damaged media recovery)
+======================================================================
+[i] Source: /dev/sdb
+[i] Target: /mnt/user-data/outputs/PHOTO-2025-01-26-002.dd
+[i] Mapfile: /mnt/user-data/outputs/PHOTO-2025-01-26-002.mapfile
+
+[i] Command: ddrescue -f -v /dev/sdb /mnt/user-data/outputs/PHOTO-2025-01-26-002.dd /mnt/user-data/outputs/PHOTO-2025-01-26-002.mapfile
+
+GNU ddrescue 1.26
+Press Ctrl-C to interrupt
+     ipos:   59621 MB, non-trimmed:        0 B,  current rate:  45678 kB/s
+     opos:   59621 MB, non-scraped:   524288 B,  average rate:  42134 kB/s
+non-tried:        0 B,  bad-sector:     8192 B,    error rate:      12 B/s
+  rescued:   59621 MB,   bad areas:        3,        run time:      23m 45s
+pct rescued:   99.99%, read errors:       12,  remaining time:         2s
+                              time since last successful read:         0s
+Finished
+
+[✓] Imaging completed in 1425 seconds
+[!] WARNING: 12 bad sectors detected
+[!] Image is PARTIAL - some data may be unrecoverable
+
+Calculating SHA-256 hash of source...
+[✓] Source SHA-256: f9e8d7c6b5a4321098765432109876543210fedcba0987654321fedcba09876
+
+======================================================================
+IMAGING COMPLETED SUCCESSFULLY
+======================================================================
+[i] Image file: /mnt/user-data/outputs/PHOTO-2025-01-26-002.dd
+[i] Duration: 1425s (24 min)
+[i] Average speed: 41.85 MB/s
+[!] Bad sectors: 12
+======================================================================
+
+================================================================================
+OUTPUT FILES CREATED
+================================================================================
+
+1. FORENSIC IMAGE
+   - Filename: {case_id}.dd
+   - Format: Raw bit-stream (dc3dd/ddrescue) or E01 (ewfacquire)
+   - Size: Exact match to source device size
+   - Location: /mnt/user-data/outputs/
+
+2. SHA-256 HASH FILE
+   - Filename: {case_id}.dd.sha256
+   - Format: Standard checksum format (hash + filename)
+   - Purpose: Quick verification reference
+   - Example: a1b2c3...  PHOTO-2025-01-26-001.dd
+
+3. IMAGING LOG
+   - Filename: {case_id}_imaging.log
+   - Contains: Tool output, timestamps, command used, errors
+   - Purpose: Chain of custody documentation
+   - Format: Plain text
+
+4. JSON REPORT
+   - Filename: {case_id}_imaging.json
+   - Contains: All metadata, hashes, timing, status
+   - Purpose: Automation, database integration
+   - Fields: case_id, device, tool_used, duration, hash, etc.
+
+5. MAPFILE (ddrescue only)
+   - Filename: {case_id}.mapfile
+   - Contains: Block-by-block read status (+/- symbols)
+   - Purpose: Track which sectors were readable/unreadable
+   - Used for recovery continuation if process interrupted
+
+================================================================================
+USAGE EXAMPLES
+================================================================================
+
+INTERACTIVE MODE:
+$ python3 step05_create_image.py
+Device path (e.g., /dev/sdb): /dev/sdb
+Case ID (e.g., PHOTO-2025-01-26-001): PHOTO-2025-01-26-001
+
+COMMAND LINE MODE:
+$ python3 step05_create_image.py /dev/sdb PHOTO-2025-01-26-001
+
+INTEGRATION WITH PENTEREP PLATFORM:
+- Script automatically called after Step 3 (Readability Test)
+- Reads JSON output from Step 3 to select imaging tool
+- Outputs JSON for Step 6 (Hash Verification) to consume
+- All files saved to /mnt/user-data/outputs/ for platform access
+
+================================================================================
+ERROR HANDLING
+================================================================================
+
+ERROR: Readability test file not found
+- Solution: Run Step 3 (Readability Test) first
+- Step 3 creates: {case_id}_readability_test.json
+
+ERROR: Write-blocker NOT working
+- CRITICAL: Process aborts immediately
+- Solution: Verify write-blocker hardware connection
+- Never proceed without write protection
+
+ERROR: Insufficient storage space
+- Shows: Required space vs Available space
+- Solution: Free up space or use larger target drive
+- Formula: Need 110% of source size
+
+ERROR: Media is UNREADABLE
+- Solution: Run Step 4 (Physical Repair) first
+- Cannot image completely unreadable media
+- ddrescue requires at least some readable sectors
+
+================================================================================
+FORENSIC STANDARDS COMPLIANCE
+================================================================================
+
+NIST SP 800-86 - Integration of Forensic Techniques into Incident Response
+- Section 3.1.1: Collection Phase - Bit-for-bit acquisition
+- Section 3.1.2: Data Integrity - Cryptographic hashing
+- Write-blocker usage mandatory for evidence preservation
+
+ISO/IEC 27037:2012 - Guidelines for identification, collection, acquisition and preservation of digital evidence
+- Section 6.3: Acquisition of digital evidence
+- Hash verification required for integrity proof
+- Documentation of acquisition process (logs)
+
+ACPO Good Practice Guide for Digital Evidence
+- Principle 1: No action should change data held on device
+- Principle 2: Person accessing data must be competent
+- Principle 3: Audit trail of all processes applied
+- Principle 4: Person in charge overall responsible
+
+HASH ALGORITHMS:
+- SHA-256 (primary): 256-bit, collision-resistant
+- MD5 (optional): Legacy compatibility (128-bit, deprecated)
+- SHA-1 (optional): Legacy compatibility (160-bit, deprecated)
+
+TOOL SELECTION RATIONALE:
+- dc3dd: DoD Cyber Crime Center fork of dd with forensic features
+- ddrescue: GNU recovery tool designed for damaged media
+- ewfacquire: Expert Witness Format with compression and metadata
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+SLOW IMAGING SPEED (<1 MB/s):
+- Check: USB 2.0 vs USB 3.0 connection
+- Check: Write-blocker performance (some models are slow)
+- Check: Source media health (bad sectors slow down process)
+- Check: Target drive write speed (use SSD if possible)
+
+IMAGING PROCESS HANGS:
+- ddrescue: May be stuck on bad sector cluster
+- Solution: Wait - ddrescue will eventually skip after retries
+- Check: ddrescue progress output for "current rate" indicator
+- If completely frozen: Ctrl+C and check system logs
+
+HASH CALCULATION TIMEOUT:
+- Occurs if source device very slow (<0.5 MB/s)
+- Solution: Increase timeout parameter in script
+- For damaged media: Hash may be unreliable anyway
+- Consider skipping hash for PARTIAL images
+
+PERMISSION DENIED ERRORS:
+- Solution: Run script with sudo
+- Required for: blockdev, dd, dc3dd, ddrescue
+- Alternative: Add user to 'disk' group (not recommended for forensics)
+
+================================================================================
+NEXT STEPS AFTER IMAGING
+================================================================================
+
+STEP 6: Hash Verification
+- Compare source hash with image hash
+- Mathematical proof of bit-for-bit copy
+- Critical for court admissibility
+
+STEP 7: Mount Forensic Image
+- Read-only mount using loop device
+- Never mount source device directly
+- All analysis on image, not original
+
+STEP 8: File System Analysis
+- Extract file system metadata
+- Identify deleted files
+- Timeline analysis
+
+STEP 9: Data Carving
+- Recover deleted files
+- Extract files from unallocated space
+- Header/footer signature matching
+
+STEP 10: Report Generation
+- Consolidate all findings
+- Chain of custody documentation
+- Legal-ready format
+
+================================================================================
+"""
