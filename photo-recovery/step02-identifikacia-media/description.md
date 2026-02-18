@@ -6,11 +6,11 @@ Identifikovať médium a vytvoriť fotodokumentáciu.
 
 ## Obtiažnosť
 
-Snadné
+Jednoduchá
 
 ## Časová náročnosť
 
-15
+15 minút
 
 ## Automatický test
 
@@ -18,25 +18,74 @@ Nie
 
 ## Popis
 
-Identifikácia média je kritický krok, ktorý zabezpečuje, že každý artefakt v prípade môže byť jednoznačne identifikovaný a odlíšený od iných médií v laboratóriu. Tento proces vytvára základnú dokumentáciu pre forenzný reťazec držania dôkazu (Chain of Custody). Fyzické identifikátory ako sériové číslo sú jedinečné pre každé médium, fotodokumentácia poskytuje vizuálny záznam stavu pri prijatí, a technické parametre sú potrebné pre výber správnej stratégie obnovy.
+Identifikácia média je kritický krok, ktorý zabezpečuje jednoznačnú identifikáciu každého artefaktu v prípade a odlíšenie od iných médií v laboratóriu. Tento proces vytvára základnú dokumentáciu pre forenzný reťazec držania dôkazu (Chain of Custody) v súlade s ISO/IEC 27037:2012.
 
 ## Jak na to
 
-Vyhotovte komplexnú fotodokumentáciu média. Začnite celkovým záberom s mierkou pre stanovenie veľkosti, následne odfotografujte všetkých šesť strán zariadenia - vrch (TOP), spodok (BOTTOM), prednú stranu (FRONT), zadnú stranu (BACK), ľavú stranu (LEFT) a pravú stranu (RIGHT). Vytvorte detailné makro zábery sériového čísla a všetkých viditeľných poškodení alebo anomálií.
+**1. Fotodokumentácia:**
 
-Zaznamenajte fyzické identifikátory média do formulára. Zapíšte výrobcu (napríklad SanDisk, Samsung, Kingston), presné typové označenie modelu, kompletné sériové číslo bez skratiek, farbu púzdra a použitý materiál (plast, kov, keramika). Zmerajte presné rozmery média posuvným meradlom - dĺžka, šírka a výška v milimetroch. Zapíšte kapacitu z nálepky zariadenia (nie odhadovanú kapacitu od klienta).
+Vyhotovte komplexnú fotodokumentáciu média:
+- Celkový záber s mierkou pre stanovenie veľkosti
+- Šesť strán zariadenia: vrch (TOP), spodok (BOTTOM), predná strana (FRONT), zadná strana (BACK), ľavá strana (LEFT), pravá strana (RIGHT)
+- Detailné makro zábery sériového čísla
+- Detaily všetkých viditeľných poškodení alebo anomálií
 
-Zdokumentujte fyzický stav média. Popíšte celkový stav ako nové, mierne použité, intenzívne použité alebo poškodené. Zaznamenajte stav originálnych štítkov a nálepiek - nepoškodené, opotrebované, chýbajúce alebo zmenené. Všimnite si viditeľné stopy používania ako škrabance, odtlačky prstov, znečistenie alebo zmeny farby.
+**2. Fyzické identifikátory:**
 
-Ak je prítomné viditeľné fyzické poškodenie, detailne ho popíšte. Špecifikujte typ poškodenia (prasklina púzdra, zlomený konektor, deformácia, vypálené komponenty, korózia kontaktov), presnú lokalizáciu na zariadení a závažnosť - malé (kozmetické, nefunkčné), stredné (čiastočne funkčné, vyžaduje opravu) alebo kritické (znemožňuje pripojenie).
+Zaznamenajte do formulára:
+- Výrobca (napr. SanDisk, Samsung, Kingston)
+- Presné typové označenie modelu
+- Kompletné sériové číslo
+- Farba púzdra a materiál (plast, kov, keramika)
+- Presné rozmery v mm (dĺžka × šírka × výška) - merajte posuvným meradlom
+- Kapacita z nálepky zariadenia
 
-Ak je médium v stave umožňujúcom pripojenie cez write-blocker a systém ho rozpoznáva, vykonajte automatickú technickú detekciu. Použite nástroje ako lsblk na zobrazenie blokovej štruktúry, blkid pre identifikáciu súborového systému a partícií, a smartctl pre čítanie SMART údajov ak sú dostupné. Zaznamenajte výstupy týchto nástrojov.
+**3. Fyzický stav média:**
 
-Vytvorte fyzický štítok s Case ID a nalepte ho na médium na miesto, kde nebude zasahovať do konektorov, nebude prekrývať sériové číslo ani nepoškodí pôvodné výrobné nálepky. Archivujte všetky fotografie a záznamy do dokumentácie Case.
+Zdokumentujte:
+- Celkový stav: nové / mierne použité / intenzívne použité / poškodené
+- Stav štítkov a nálepiek: nepoškodené / opotrebované / chýbajúce / zmenené
+- Viditeľné stopy používania: škrabance, odtlačky prstov, znečistenie, zmeny farby
+
+**4. Fyzické poškodenie (ak je prítomné):**
+
+Detailne popíšte:
+- Typ poškodenia: prasklina púzdra, zlomený konektor, deformácia, vypálené komponenty, korózia kontaktov
+- Presná lokalizácia na zariadení
+- Závažnosť:
+  - Malé (kozmetické, nefunkčné)
+  - Stredné (čiastočne funkčné, vyžaduje opravu)
+  - Kritické (znemožňuje pripojenie)
+
+**5. Technická detekcia (ak je médium čitateľné):**
+
+Ak médium umožňuje pripojenie cez write-blocker a systém ho rozpoznáva:
+- `lsblk` - zobrazenie blokovej štruktúry
+- `blkid` - identifikácia súborového systému a partícií
+- `smartctl` - čítanie SMART údajov (ak sú dostupné)
+
+Zaznamenajte výstupy týchto nástrojov.
+
+**6. Fyzické označenie:**
+
+Vytvorte fyzický štítok s Case ID a nalepte ho na médium tak, aby:
+- Nezasahoval do konektorov
+- Neprekrýval sériové číslo
+- Nepoškodil pôvodné výrobné nálepky
+
+**7. Archivácia:**
+
+Archivujte všetky fotografie a záznamy do dokumentácie Case.
 
 ## Výsledek
 
-Médium je identifikované a zdokumentované. Vytvorená fotodokumentácia obsahuje minimálne 8 kvalitných fotografií (celkový záber, 6 strán, detail sériového čísla, detaily poškodení ak sú prítomné). Vyplnený identifikačný formulár s kompletným fyzickými a technickými parametrami. Na médium je prilepený fyzický štítok s Case ID. Workflow postúpi do rozhodovacieho bodu "Je médium čitateľné?".
+Médium je identifikované a zdokumentované:
+- Fotodokumentácia (minimálne 8 fotografií: celkový záber, 6 strán, detail SN, detaily poškodení)
+- Vyplnený identifikačný formulár s kompletnými fyzickými a technickými parametrami
+- Fyzický štítok s Case ID nalepený na médium
+- Výstupy technických nástrojov (ak bolo médium čitateľné)
+
+Workflow postupuje do rozhodovacieho bodu "Je médium čitateľné?".
 
 ## Reference
 
@@ -46,8 +95,30 @@ ACPO Good Practice Guide - Principle 2 (Recording and preservation)
 
 ## Stav
 
-K otestování
+K otestovaniu
 
 ## Nález
 
 (prázdne - vyplní sa po teste)
+
+------------------------------------------------------------------------
+## Poznámky k implementácii
+
+**Praktické rozšírenia oproti teoretickému návrhu v diplomovej práci:**
+
+Teoretická časť (Kapitola 3.3.2, Krok 4) uvádza:
+- Fyzický popis (typ, výrobca, model, viditeľné poškodenie)
+- Technické identifikátory (sériové čísla)
+- Fotodokumentácia zariadenia zo všetkých strán
+
+**Implementácia rozširuje tento krok o:**
+
+1. **Detailný protokol fotodokumentácie** - presná špecifikácia 6 strán + celkový záber + makro detaily
+2. **Meranie presných rozmerov** - použitie posuvného meradla pre presné technické údaje
+3. **Klasifikácia fyzického stavu** - štandardizované kategórie (nové/použité/poškodené)
+4. **Klasifikácia závažnosti poškodení** - trojstupňová škála (malé/stredné/kritické) pre rozhodovanie o fyzickej oprave
+5. **Technická detekcia nástrojmi** - lsblk, blkid, smartctl pre získanie doplňujúcich technických informácií
+6. **Fyzické označenie štítkom** - Chain of Custody prvok prevzatý zo scenára 1 (Policajný výsluch)
+7. **Štruktúrované podkroky 1-7** - detailný návod na vykonanie kroku v praxi
+
+Tieto rozšírenia budú doplnené do implementačnej kapitoly diplomovej práce s odôvodnením ich potreby pre jednoznačnú identifikáciu médií a štandardizáciu procesu dokumentácie v laboratórnom prostredí.

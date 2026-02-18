@@ -2,41 +2,91 @@
 
 ## Úkol
 
-Je médium čítateľné?
+Je médium čitateľné?
 
 ## Obtiažnosť
 
-Snadné
+Jednoduchá
 
 ## Časová náročnosť
 
-5
+5 minút
 
 ## Automatický test
 
-Áno
+Poloautomatický (vyžaduje potvrdenie spustenia)
 
 ## Popis
 
-Tento rozhodovací bod určuje kľúčové vetvenie pracovného postupu. Médium môže byť čítateľné (operačný systém detekuje zariadenie a umožňuje čítať sektory) alebo nečítateľné (médium nie je detekované systémom, čítanie vracia chyby hardvéru, vyžaduje fyzickú opravu). Automatický test vykoná sériu kontrolných operácií na určenie stavu média a odporučí optimálny postup pre ďalšie kroky vrátane výberu vhodného nástroja pre imaging.
+Tento rozhodovací bod určuje kľúčové vetvenie pracovného postupu podľa diagramu 3.2 v diplomovej práci. Automatický diagnostický test vykoná sériu READ-ONLY kontrol na určenie stavu média a jeho schopnosti poskytovať dáta. Na základe výsledkov systém automaticky odporučí optimálny postup:
+
+- READABLE: pokračovať vytvorením forenzného obrazu (krok 5) s nástrojom dd
+- PARTIAL: pokračovať vytvorením obrazu (krok 5) s nástrojom ddrescue
+- UNREADABLE: vetviť na fyzickú opravu média (krok 4)
+
+KRITICKÉ BEZPEČNOSTNÉ UPOZORNENIE:
+
+Test vykonáva výhradne READ-ONLY operácie, ale používateľ musí pred spustením overiť správne pripojenie write-blockera. Spustenie testu bez write-blockera môže modifikovať dôkazové médium. Pri mechanických HDD s podozrením na fyzické poškodenie môže pokus o čítanie zhoršiť stav zariadenia.
+
+Používateľ musí explicitne potvrdiť bezpečnostné kontroly pred spustením automatických testov.
 
 ## Jak na to
 
-Pripojte médium k forenznej stanici výhradne cez write-blocker - toto je povinná požiadavka pre zachovanie integrity dôkazu. Nikdy nepripájajte médium priamo bez write-protection zariadenia.
+**1. Kritický bezpečnostný check:**
 
-Spustite automatický test čítateľnosti. Systém vykoná sériu päť diagnostických testov na určenie stavu média a jeho schopnosti poskytovať dáta.
+Pred spustením testu overte nasledujúce podmienky:
+- Write-blocker je fyzicky pripojený
+- LED indikátor write-blockera svieti (ak je zariadenie vybavené indikátorom)
+- Médium je pripojené cez write-blocker, nie priamo k forenznej stanici
+- Pri mechanických HDD: neregistrujete nezvyčajné zvuky (škrabanie, cvakanie)
 
-Test prebieha v nasledujúcich fázach. Prvý test overuje detekciu média operačným systémom pomocou nástroja lsblk - ak systém nevidí médium vôbec, test okamžite zlyhá. Druhý test sa pokúsi prečítať prvý sektor média (512 bajtov) pomocou dd príkazu - overuje základnú schopnosť čítania dát z fyzického zariadenia.
+Ak nie sú splnené všetky podmienky, nepokračujte v teste. Existuje riziko poškodenia dôkazu.
 
-Tretí test vykoná sekvenčné čítanie prvého megabajtu dát pre overenie konzistentného sekvenčného prístupu. Štvrtý test vykoná náhodné čítanie z rôznych pozícií na médiu pre detekciu lokalizovaných chýb alebo vadných sektorov. Piaty test meria rýchlosť čítania pre identifikáciu médií s degradovaným výkonom, čo môže indikovať blížiacu sa poruchu.
+**2. Potvrdenie a spustenie testu:**
 
-Na základe výsledkov týchto testov systém automaticky určí stav média. Pri výsledku READABLE (všetky testy úspešné) workflow automaticky pokračuje krokom 5 "Vytvorenie forenzného obrazu" s použitím štandardného nástroja dd. Pri výsledku PARTIAL (niektoré testy zlyhali, ale médium je čiastočne čitateľné) systém odporúča použitie ddrescue namiesto dd a pokračuje krokom 5 s varovaním. Pri výsledku UNREADABLE (kritické testy zlyhali) workflow automaticky vetvuje na krok 4 "Fyzická oprava média".
+Po overení bezpečnosti potvrďte spustenie automatického testu. Systém vykoná sériu piatich diagnostických testov:
 
-Overte výsledky testu a skontrolujte vygenerovaný JSON report obsahujúci detailné výstupy každého testu, identifikované problémy a odporúčaný postup.
+Test 1 - Detekcia média:
+- Nástroj: lsblk
+- Overuje, či operačný systém detekuje zariadenie
+- Zlyhanie znamená, že médium nie je vôbec viditeľné systémom
+
+Test 2 - Čítanie prvého sektora:
+- Nástroj: dd (čítanie 512 bajtov)
+- Overuje základnú schopnosť čítania dát z fyzického zariadenia
+
+Test 3 - Sekvenčné čítanie:
+- Čítanie prvého megabajtu dát
+- Overuje konzistentný sekvenčný prístup
+
+Test 4 - Náhodné čítanie:
+- Čítanie z náhodných pozícií na médiu
+- Detekuje lokalizované chyby alebo vadné sektory
+
+Test 5 - Meranie rýchlosti:
+- Meria rýchlosť čítania
+- Identifikuje médiá s degradovaným výkonom
+
+**3. Vyhodnotenie výsledkov:**
+
+Systém automaticky určí stav média:
+
+READABLE (všetky testy úspešné):
+Workflow pokračuje krokom 5 "Vytvorenie forenzného obrazu" s nástrojom dd.
+
+PARTIAL (niektoré testy zlyhali, médium čiastočne čitateľné):
+Workflow pokračuje krokom 5 s nástrojom ddrescue a varovaním.
+
+UNREADABLE (kritické testy zlyhali):
+Workflow vetvuje na krok 4 "Fyzická oprava média".
+
+**4. Kontrola výsledkov:**
+
+Overte vygenerovaný JSON report obsahujúci detailné výstupy každého testu, identifikované problémy a odporúčaný postup.
 
 ## Výsledek
 
-Test dokončený, stav média automaticky určený a zaradený do jednej z kategórií: READABLE (workflow pokračuje krokom 5 s dd), PARTIAL (workflow pokračuje krokom 5 s ddrescue a varovaním) alebo UNREADABLE (workflow vetvuje na krok 4 fyzickej opravy). Vygenerovaný JSON report s výsledkami všetkých piatich testov, identifikovanými chybami ak existujú, a jasným odporúčaním nástroja pre nasledujúci krok.
+Test dokončený, stav média automaticky určený. Výstupom je klasifikácia média (READABLE, PARTIAL alebo UNREADABLE), JSON report s výsledkami všetkých piatich testov, jasné odporúčanie nástroja pre nasledujúci krok (dd alebo ddrescue) a automatické vetvenie workflow podľa stavu.
 
 ## Reference
 
@@ -46,8 +96,28 @@ ACPO Good Practice Guide - Principle 1 (No action should change data)
 
 ## Stav
 
-K otestování
+K otestovaniu
 
 ## Nález
 
 (prázdne - vyplní sa po teste)
+
+--------------------------------------------------------------------------
+## Poznámky k implementácii
+
+Praktické rozšírenia oproti teoretickému návrhu v diplomovej práci:
+
+Teoretická časť (Kapitola 3.3.2, Krok 3) uvádza len verifikáciu čitateľnosti média pripojením k forenznému počítaču cez write-blocker a pri nečitateľnom médiu vetvenie k fyzickej oprave.
+
+Implementácia rozširuje tento krok o:
+
+1. Poloautomatický proces - používateľ musí explicitne potvrdiť bezpečnostné kontroly pred spustením
+2. Automatizovaný testovací protokol - namiesto manuálnej verifikácie systém vykonáva štandardizovanú sériu piatich testov
+3. Diagnostické testy - lsblk (detekcia), dd (prvý sektor), sekvenčné čítanie (1MB), náhodné čítanie (vadné sektory), meranie rýchlosti (degradácia)
+4. Trojstupňová klasifikácia - READABLE, PARTIAL, UNREADABLE namiesto binárnej áno/nie
+5. Automatický výber nástroja - systém odporúča dd pre READABLE, ddrescue pre PARTIAL médium
+6. JSON report - štruktúrovaný výstup s detailnými výsledkami každého testu
+7. Stav PARTIAL - nová kategória pre médiá s čiastočnými chybami, ktoré vyžadujú špeciálny nástroj ale nepotrebujú fyzickú opravu
+8. Bezpečnostné kontroly - explicitná verifikácia write-blockera pred spustením testov
+
+Tieto rozšírenia budú doplnené do implementačnej kapitoly diplomovej práce s odôvodnením ich potreby pre štandardizáciu diagnostického procesu, reprodukovateľnosť testovania naprieč rôznymi prípadmi, objektívne rozhodovanie o ďalšom postupe, dokumentáciu technického stavu média pre forenzné účely a ochranu integrity dôkazového materiálu.

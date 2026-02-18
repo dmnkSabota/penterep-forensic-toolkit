@@ -2,15 +2,15 @@
 
 ## Úkol
 
-Prijať žiadosť a vytvoriť Case ID pre obnovu fotografií.
+Prijať žiadosť o obnovu fotografií a vytvoriť Case ID.
 
 ## Obtiažnosť
 
-Snadné
+Jednoduchá
 
 ## Časová náročnosť
 
-10
+15 minút
 
 ## Automatický test
 
@@ -18,32 +18,62 @@ Nie
 
 ## Popis
 
-Prvý krok každého forenzného procesu obnovy dát začína formálnym prijatím žiadosti od klienta. V tomto kroku sa vytvorí unikátny identifikátor prípadu (Case ID), zaznamenajú sa základné informácie o klientovi a povahe žiadosti, a inicializuje sa dokumentačný proces v súlade s ISO/IEC 27037:2012.
-
-
+Prvý krok procesu obnovy fotografií začína formálnym prijatím žiadosti od klienta. Vytvorí sa unikátny identifikátor prípadu (Case ID), zaznamenajú sa základné informácie o klientovi a médiu, a inicializuje sa dokumentačný proces v súlade s ISO/IEC 27037:2012.
 
 ## Jak na to
 
-Otvorte formulár pre nový Case a vyplňte kompletné údaje klienta - meno alebo názov firmy, kontaktný email, telefónne číslo a fakturačnú adresu ak je dostupná.
+**1. Vytvorenie Case ID a základnej dokumentácie:**
 
-Vytvorte Case ID podľa formátu PHOTO-YYYY-MM-DD-XXX, kde YYYY-MM-DD je aktuálny dátum a XXX je poradové číslo prípadu v daný deň (napríklad PHOTO-2025-01-26-001 pre prvý prípad). Overte, že Case ID je jedinečné a neexistuje v databáze.
+Otvorte formulár pre nový Case a vytvorte Case ID podľa formátu PHOTO-YYYY-MM-DD-XXX, kde YYYY-MM-DD je aktuálny dátum a XXX je poradové číslo prípadu v daný deň (napríklad PHOTO-2025-01-26-001). Overte, že Case ID je jedinečné a neexistuje v databáze.
 
-Zaznamenajte základné informácie o poškodenom médiu: typ zariadenia (SD karta, microSD karta, USB flash disk, HDD, SSD alebo iné), odhadovanú kapacitu podľa údajov od klienta, a či je prítomné viditeľné fyzické poškodenie. Ak klient uvádza poškodenie, zapíšte jeho popis.
+**2. Údaje klienta:**
+
+Vyplňte kompletné údaje klienta:
+- Meno alebo názov firmy
+- Kontaktný email
+- Telefónne číslo
+- Fakturačná adresa (ak je dostupná)
+
+**3. Informácie o poškodenom médiu:**
+
+Zaznamenajte základné informácie podľa údajov od klienta:
+- Typ zariadenia (SD karta, microSD karta, USB flash disk, HDD, SSD alebo iné)
+- Odhadovaná kapacita
+- Viditeľné fyzické poškodenie (ak áno, zapíšte popis)
+
+POZNÁMKA: Tieto údaje budú overené pri fyzickej identifikácii média v ďalšom kroku.
+
+**4. Urgentnosť a SLA:**
 
 Vyberte urgentnosť prípadu podľa dohody s klientom:
 - Štandardná (5-7 pracovných dní)
 - Vysoká (2-3 pracovné dni)
 - Kritická (do 24 hodín)
 
-Zvoľte právny základ spracovania osobných údajov podľa GDPR. Pre komerčnú obnovu dát je to typicky "plnenie zmluvy", pre súdne vyšetrovania "právna povinnosť".
+**5. GDPR súlad:**
 
-Vygenerujte príjmový protokol s týmito údajmi, vytlačte ho a nechajte klienta podpísať. Naskenujte podpísanú verziu a archivujte ju do dokumentácie Case.
+Zvoľte právny základ spracovania osobných údajov:
+- Pre komerčnú obnovu: "plnenie zmluvy"
+- Pre súdne vyšetrovania: "právna povinnosť"
 
-Uložte Case do systému - overte vytvorenie Case ID dokumentu (JSON formát) a odoslanie potvrdzovacieho emailu klientovi s číslom prípadu a ďalšími krokmi.
+**6. Príjmový protokol:**
+
+Vygenerujte príjmový protokol s vyššie uvedenými údajmi, vytlačte ho a nechajte klienta podpísať. Naskenujte podpísanú verziu a archivujte ju do dokumentácie Case.
+
+**7. Finalizácia:**
+
+Uložte Case do systému a overte:
+- Vytvorenie Case ID dokumentu (JSON formát)
+- Odoslanie potvrdzovacieho emailu klientovi s číslom prípadu a ďalšími krokmi
 
 ## Výsledek
 
-Po úspešnom dokončení je vytvorený Case ID dokument (JSON), príjmový protokol (PDF) s podpisom klienta, a odoslaný potvrdzovací email. Case je označený ako "INITIATED" a workflow automaticky postúpi do kroku "Identifikácia média".
+Po úspešnom dokončení sú vytvorené:
+- Case ID dokument (JSON)
+- Príjmový protokol (PDF) s podpisom klienta
+- Potvrdzovací email odoslaný klientovi
+
+Case je označený stavom "INITIATED" a workflow automaticky postupuje do kroku "Identifikácia média".
 
 ## Reference
 
@@ -53,8 +83,28 @@ NIST SP 800-86 - Section 3.1.1 (Collection Phase)
 
 ## Stav
 
-K otestování
+K otestovaniu
 
 ## Nález
 
 (prázdne - vyplní sa po teste)
+
+---------------------------------------------------------------------
+## Poznámky k implementácii
+
+**Praktické rozšírenia oproti teoretickému návrhu v diplomovej práci:**
+
+Teoretická časť (Kapitola 3.3.2, Kroky 1-2) uvádza len:
+- Vytvorenie Case ID
+- Záznam typu média, výrobcu, kapacity a viditeľného poškodenia
+
+**Implementácia rozširuje tento krok o:**
+
+1. **Kompletné údaje klienta** (meno/firma, email, telefón, adresa) - potrebné pre komerčné využitie a komunikáciu s klientom
+2. **Urgentnosť a SLA** (štandardná/vysoká/kritická) - nastavenie realistických očakávaní a časových rámcov
+3. **GDPR právny základ** - súlad s legislatívou pri spracovaní osobných údajov (relevantné pre fotografie obsahujúce osobné údaje)
+4. **Príjmový protokol s podpisom** - formálne potvrdenie prijatia média a podmienok
+5. **Potvrdzovací email** - automatická komunikácia s klientom o stave prípadu
+6. **Štruktúrované podkroky 1-7** - detailný návod na vykonanie kroku v praxi
+
+Tieto rozšírenia budú doplnené do implementačnej kapitoly diplomovej práce s odôvodnením ich potreby pre praktické nasadenie systému v komerčnom prostredí forenzných laboratórií a orgánov činných v trestnom konaní.3
