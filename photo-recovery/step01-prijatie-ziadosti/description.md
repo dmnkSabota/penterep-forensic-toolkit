@@ -18,68 +18,56 @@ Nie
 
 ## Popis
 
-Prvý krok procesu obnovy fotografií začína formálnym prijatím žiadosti od klienta. Vytvorí sa unikátny identifikátor prípadu (Case ID), zaznamenajú sa základné informácie o klientovi a médiu, a inicializuje sa dokumentačný proces v súlade s ISO/IEC 27037:2012.
+Prvý krok procesu obnovy fotografií začína formálnym prijatím žiadosti od klienta. Vytvorí sa unikátny identifikátor prípadu (Case ID), zaznamenajú sa základné informácie o klientovi a médiu, inicializuje sa Chain of Custody log a spustí sa dokumentačný proces v súlade s ISO/IEC 27037:2012.
 
 ## Jak na to
 
-**1. Vytvorenie Case ID a základnej dokumentácie:**
+**1. Vytvorenie Case ID:**
 
-Otvorte formulár pre nový Case a vytvorte Case ID podľa formátu PHOTO-YYYY-MM-DD-XXX, kde YYYY-MM-DD je aktuálny dátum a XXX je poradové číslo prípadu v daný deň (napríklad PHOTO-2025-01-26-001). Overte, že Case ID je jedinečné a neexistuje v databáze.
+Vytvorte Case ID podľa formátu PHOTO-YYYY-MM-DD-XXX, kde YYYY-MM-DD je aktuálny dátum a XXX je poradové číslo prípadu v daný deň (napríklad PHOTO-2025-01-26-001). Overte, že Case ID ešte neexistuje v databáze.
 
 **2. Údaje klienta:**
 
-Vyplňte kompletné údaje klienta:
-- Meno alebo názov firmy
-- Kontaktný email
-- Telefónne číslo
-- Fakturačná adresa (ak je dostupná)
+Vyplňte kontaktné údaje klienta: meno alebo názov firmy, email, telefónne číslo a fakturačnú adresu ak je dostupná.
 
-**3. Informácie o poškodenom médiu:**
+**3. Informácie o médiu:**
 
-Zaznamenajte základné informácie podľa údajov od klienta:
-- Typ zariadenia (SD karta, microSD karta, USB flash disk, HDD, SSD alebo iné)
-- Odhadovaná kapacita
-- Viditeľné fyzické poškodenie (ak áno, zapíšte popis)
-
-POZNÁMKA: Tieto údaje budú overené pri fyzickej identifikácii média v ďalšom kroku.
+Zaznamenajte základné informácie podľa toho, čo klient uvádza: typ zariadenia (SD karta, microSD, USB flash disk, HDD, SSD alebo iné), odhadovanú kapacitu a popis prípadného viditeľného poškodenia. Tieto údaje budú overené fyzicky v nasledujúcom kroku.
 
 **4. Urgentnosť a SLA:**
 
-Vyberte urgentnosť prípadu podľa dohody s klientom:
-- Štandardná (5-7 pracovných dní)
-- Vysoká (2-3 pracovné dni)
+Dohodnite s klientom urgentnosť prípadu:
+- Štandardná (5–7 pracovných dní)
+- Vysoká (2–3 pracovné dni)
 - Kritická (do 24 hodín)
 
 **5. GDPR súlad:**
 
-Zvoľte právny základ spracovania osobných údajov:
-- Pre komerčnú obnovu: "plnenie zmluvy"
-- Pre súdne vyšetrovania: "právna povinnosť"
+Zvoľte právny základ spracovania osobných údajov: pre komerčnú obnovu "plnenie zmluvy", pre súdne prípady "právna povinnosť".
 
 **6. Príjmový protokol:**
 
-Vygenerujte príjmový protokol s vyššie uvedenými údajmi, vytlačte ho a nechajte klienta podpísať. Naskenujte podpísanú verziu a archivujte ju do dokumentácie Case.
+Platforma vygeneruje príjmový protokol vo formáte PDF. Vytlačte ho, nechajte klienta podpísať a naskenovanú verziu archivujte do dokumentácie Case. Podpis a skenovanie sú manuálne aktivity mimo systému.
 
 **7. Finalizácia:**
 
-Uložte Case do systému a overte:
-- Vytvorenie Case ID dokumentu (JSON formát)
-- Odoslanie potvrdzovacieho emailu klientovi s číslom prípadu a ďalšími krokmi
+Uložte Case a skontrolujte, že bol vytvorený Case ID dokument (JSON) a inicializovaný Chain of Custody log s prvým záznamom. Potvrdzovací email s číslom prípadu a ďalšími krokmi odošlite klientovi manuálne.
 
 ## Výsledek
 
-Po úspešnom dokončení sú vytvorené:
-- Case ID dokument (JSON)
+Po dokončení kroku existujú tieto výstupy:
+- Case ID dokument (JSON) so stavom "INITIATED"
 - Príjmový protokol (PDF) s podpisom klienta
-- Potvrdzovací email odoslaný klientovi
+- Inicializovaný Chain of Custody log – prvý záznam obsahuje Case ID, dátum a čas prijatia, meno analytika
+- Odoslaný potvrdzovací email klientovi
 
-Case je označený stavom "INITIATED" a workflow automaticky postupuje do kroku "Identifikácia média".
+Workflow automaticky postupuje do kroku "Identifikácia média".
 
 ## Reference
 
-ISO/IEC 27037:2012 - Section 5 (Guidelines for identification)
-GDPR (Nariadenie EÚ 2016/679) - Článok 6 (Právny základ spracovania)
-NIST SP 800-86 - Section 3.1.1 (Collection Phase)
+ISO/IEC 27037:2012 – Section 5 (Guidelines for identification)
+GDPR (Nariadenie EÚ 2016/679) – Článok 6 (Právny základ spracovania)
+NIST SP 800-86 – Section 3.1.1 (Collection Phase)
 
 ## Stav
 
@@ -87,24 +75,14 @@ K otestovaniu
 
 ## Nález
 
-(prázdne - vyplní sa po teste)
+(prázdne – vyplní sa po teste)
 
----------------------------------------------------------------------
+---
+
 ## Poznámky k implementácii
 
-**Praktické rozšírenia oproti teoretickému návrhu v diplomovej práci:**
+Teoretická časť (Kapitola 3.3.2, Kroky 1–2) pokrýva len vytvorenie Case ID a záznam základných údajov o médiu. Implementácia tento základ rozširuje o prvky potrebné pre praktické nasadenie v komerčnom laboratóriu:
 
-Teoretická časť (Kapitola 3.3.2, Kroky 1-2) uvádza len:
-- Vytvorenie Case ID
-- Záznam typu média, výrobcu, kapacity a viditeľného poškodenia
+Kompletné údaje klienta umožňujú komunikáciu a fakturáciu. Urgentnosť a SLA nastavuje realistické očakávania hneď od začiatku. GDPR právny základ je relevantný najmä pri fotografiách obsahujúcich osobné údaje. Príjmový protokol s podpisom klienta formálne potvrdzuje podmienky spolupráce a odovzdanie média. Inicializácia Chain of Custody logu priamo v kroku 1 zabezpečuje nepretržitý audit trail od momentu prijatia žiadosti – nie až od fyzického prevzatia média.
 
-**Implementácia rozširuje tento krok o:**
-
-1. **Kompletné údaje klienta** (meno/firma, email, telefón, adresa) - potrebné pre komerčné využitie a komunikáciu s klientom
-2. **Urgentnosť a SLA** (štandardná/vysoká/kritická) - nastavenie realistických očakávaní a časových rámcov
-3. **GDPR právny základ** - súlad s legislatívou pri spracovaní osobných údajov (relevantné pre fotografie obsahujúce osobné údaje)
-4. **Príjmový protokol s podpisom** - formálne potvrdenie prijatia média a podmienok
-5. **Potvrdzovací email** - automatická komunikácia s klientom o stave prípadu
-6. **Štruktúrované podkroky 1-7** - detailný návod na vykonanie kroku v praxi
-
-Tieto rozšírenia budú doplnené do implementačnej kapitoly diplomovej práce s odôvodnením ich potreby pre praktické nasadenie systému v komerčnom prostredí forenzných laboratórií a orgánov činných v trestnom konaní.3
+Tieto rozšírenia budú zdôvodnené v implementačnej kapitole diplomovej práce.

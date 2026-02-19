@@ -20,9 +20,9 @@ Poloautomatický (vyžaduje potvrdenie spustenia)
 
 Tento rozhodovací bod určuje kľúčové vetvenie pracovného postupu podľa diagramu 3.2 v diplomovej práci. Automatický diagnostický test vykoná sériu READ-ONLY kontrol na určenie stavu média a jeho schopnosti poskytovať dáta. Na základe výsledkov systém automaticky odporučí optimálny postup:
 
-- READABLE: pokračovať vytvorením forenzného obrazu (krok 5) s nástrojom dd
-- PARTIAL: pokračovať vytvorením obrazu (krok 5) s nástrojom ddrescue
-- UNREADABLE: vetviť na fyzickú opravu média (krok 4)
+- **READABLE** – všetky testy úspešné → krok 5 s nástrojom dc3dd
+- **PARTIAL** – niektoré testy zlyhali, médium čiastočne čitateľné → krok 5 s nástrojom ddrescue
+- **UNREADABLE** – kritické testy zlyhali → krok 4 (fyzická oprava)
 
 KRITICKÉ BEZPEČNOSTNÉ UPOZORNENIE:
 
@@ -32,61 +32,43 @@ Používateľ musí explicitne potvrdiť bezpečnostné kontroly pred spustením
 
 ## Jak na to
 
-**1. Kritický bezpečnostný check:**
+**1. Pripojenie média a predbežná detekcia:**
 
-Pred spustením testu overte nasledujúce podmienky:
-- Write-blocker je fyzicky pripojený
-- LED indikátor write-blockera svieti (ak je zariadenie vybavené indikátorom)
-- Médium je pripojené cez write-blocker, nie priamo k forenznej stanici
-- Pri mechanických HDD: neregistrujete nezvyčajné zvuky (škrabanie, cvakanie)
+Pripojte médium cez write-blocker a overte, že systém zariadenie vidí:
+- `lsblk` – zoznam blokových zariadení a ich veľkostí
+- `blkid` – identifikácia súborového systému a partícií
+- `smartctl -a /dev/sdX` – SMART údaje (dostupné pre HDD/SSD)
 
-Ak nie sú splnené všetky podmienky, nepokračujte v teste. Existuje riziko poškodenia dôkazu.
+Výstupy týchto nástrojov zaznamenajte do dokumentácie Case – sú súčasťou CoC záznamu.
 
-**2. Potvrdenie a spustenie testu:**
+**2. Bezpečnostný check pred spustením diagnostiky:**
 
-Po overení bezpečnosti potvrďte spustenie automatického testu. Systém vykoná sériu piatich diagnostických testov:
+Pred spustením automatického testu potvrďte:
+- Write-blocker je fyzicky pripojený a médium je zapojené cez neho, nie priamo
+- LED indikátor write-blockera svieti
+- Pri mechanických HDD: žiadne nezvyčajné zvuky zo zariadenia (škrabanie, cvakanie)
 
-Test 1 - Detekcia média:
-- Nástroj: lsblk
-- Overuje, či operačný systém detekuje zariadenie
-- Zlyhanie znamená, že médium nie je vôbec viditeľné systémom
+Ak niektorá podmienka nie je splnená, nepokračujte – existuje riziko poškodenia dôkazu.
 
-Test 2 - Čítanie prvého sektora:
-- Nástroj: dd (čítanie 512 bajtov)
-- Overuje základnú schopnosť čítania dát z fyzického zariadenia
+**3. Spustenie diagnostického testu:**
 
-Test 3 - Sekvenčné čítanie:
-- Čítanie prvého megabajtu dát
-- Overuje konzistentný sekvenčný prístup
+Po potvrdení bezpečnosti spustite automatický skript `ptmediareadability`. Systém vykoná päť testov v poradí:
 
-Test 4 - Náhodné čítanie:
-- Čítanie z náhodných pozícií na médiu
-- Detekuje lokalizované chyby alebo vadné sektory
-
-Test 5 - Meranie rýchlosti:
-- Meria rýchlosť čítania
-- Identifikuje médiá s degradovaným výkonom
-
-**3. Vyhodnotenie výsledkov:**
-
-Systém automaticky určí stav média:
-
-READABLE (všetky testy úspešné):
-Workflow pokračuje krokom 5 "Vytvorenie forenzného obrazu" s nástrojom dd.
-
-PARTIAL (niektoré testy zlyhali, médium čiastočne čitateľné):
-Workflow pokračuje krokom 5 s nástrojom ddrescue a varovaním.
-
-UNREADABLE (kritické testy zlyhali):
-Workflow vetvuje na krok 4 "Fyzická oprava média".
+- **Test 1 – Detekcia média** (lsblk): overuje, či OS zariadenie vôbec vidí
+- **Test 2 – Čítanie prvého sektora** (dd, 512 B): overuje základnú schopnosť čítania
+- **Test 3 – Sekvenčné čítanie** (dd, 1 MB): overuje konzistentný prístup k dátam
+- **Test 4 – Náhodné čítanie**: detekuje lokalizované vadné sektory
+- **Test 5 – Meranie rýchlosti**: identifikuje médiá s degradovaným výkonom, ktoré by spôsobovali problémy pri imagingu
 
 **4. Kontrola výsledkov:**
 
-Overte vygenerovaný JSON report obsahujúci detailné výstupy každého testu, identifikované problémy a odporúčaný postup.
+Systém automaticky určí stav média a odporučí nástroj pre nasledujúci krok. Skontrolujte vygenerovaný JSON report – obsahuje výsledky každého testu, identifikované problémy a odôvodnenie finálnej klasifikácie.
+
 
 ## Výsledek
 
-Test dokončený, stav média automaticky určený. Výstupom je klasifikácia média (READABLE, PARTIAL alebo UNREADABLE), JSON report s výsledkami všetkých piatich testov, jasné odporúčanie nástroja pre nasledujúci krok (dd alebo ddrescue) a automatické vetvenie workflow podľa stavu.
+Stav média je klasifikovaný ako READABLE, PARTIAL alebo UNREADABLE. JSON report zachytáva výsledky všetkých piatich testov vrátane identifikovaných chýb a výstupy predbežnej detekcie (lsblk, blkid, smartctl) sú zaradené do CoC dokumentácie. Workflow automaticky vetvuje podľa výsledku – do kroku 5 s príslušným nástrojom, alebo do kroku 4.
+
 
 ## Reference
 
