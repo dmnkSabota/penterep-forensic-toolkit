@@ -6,54 +6,76 @@ Zaznamenať technické špecifikácie média a špeciálne okolnosti, ktoré mô
 
 ## Obtiažnosť
 
-Snadné
+Jednoduchá
 
 ## Časová náročnosť
 
-10
+10 minút
 
 ## Automatický test
 
-Nie - manuálny krok vyžadujúci odborné posúdenie
+Nie
 
 ## Popis
 
-Dokumentácia technických špecifikácií média je kritická pre identifikáciu potenciálnych limitácií a rizík pri obnovovaní dát. Rôzne typy médií majú špecifické vlastnosti, ktoré zásadne ovplyvňujú stratégiu obnovy a jej úspešnosť. Bez tejto dokumentácie môže dôjsť k trvalej strate dát nesprávnym postupom.
+Dokumentácia technických špecifikácií média je kritická pre identifikáciu potenciálnych limitácií a rizík pri obnovovaní dát. Rôzne typy médií majú špecifické vlastnosti, ktoré zásadne ovplyvňujú stratégiu obnovy a jej úspešnosť.
 
-Prečo je tento krok kritický? SSD disky s aktívnym TRIM príkazom fyzicky odstraňujú vymazané dáta na pozadí - pripojenie SSD k systému bez write-blockera môže viesť k trvalej strate všetkých vymazaných súborov v priebehu minút. HDD so zlým SMART statusom (vysoký počet realokovaných sektorov, pending sektory) môžu kedykoľvek úplne zlyhať - je potrebné minimalizovať čas pripojenia a vykonať imaging čo najskôr. Flash médiá (USB, SD karty) majú obmedzený počet zápisových cyklov a износ vplýva na úspešnosť recovery. Šifrované médiá (BitLocker, LUKS, FileVault) sú bez recovery kľúča alebo hesla úplne neprístupné. RAID polia vyžadujú všetky disky a znalosti o konfigurácii - chýbajúci disk alebo nesprávne zostavenie môže viesť k strate dát.
+SSD disky s aktívnym TRIM príkazom fyzicky odstraňujú vymazané dáta na pozadí – pripojenie SSD bez write-blockera môže viesť k trvalej strate všetkých vymazaných súborov v priebehu minút. HDD so zlým SMART statusom môžu kedykoľvek úplne zlyhať. Šifrované médiá sú bez recovery kľúča alebo hesla úplne neprístupné. RAID polia vyžadujú všetky disky a znalosti o konfigurácii.
 
-Tento krok je často integrovaný do Kroku 2 (Identifikácia média), ale je vyčlenený ako samostatný krok pre dôkladnejšiu dokumentáciu špecifických technických parametrov a rizikových faktorov, ktoré priamo ovplyvňujú stratégiu a postup obnovy.
+Výstupy tohto kroku slúžia ako podklad pre Krok 8 (Analýza súborového systému) a pre informovanie klienta o reálnych limitáciách obnovy.
 
 ## Jak na to
 
-Identifikujte typ média pomocou príkazov `lsblk`, `fdisk -l` a `lsusb`. Zistite, či ide o SSD (Solid State Drive), HDD (mechanický disk), USB flash disk, SD kartu, alebo špeciálne zariadenie ako RAID pole. Typ média určuje, ktoré diagnostické nástroje a parametre sú relevantné.
+**1. Identifikácia typu média:**
 
-Pre SSD disky zaznamenajte TRIM support status pomocou `hdparm -I /dev/sdX | grep TRIM`. Ak je TRIM podporovaný a aktívny, zaznamenajte KRITICKÉ varovanie - vymazané dáta môžu byť automaticky fyzicky odstránené počas pripojenia média. Zistite stav Garbage Collection a Wear Leveling pomocou `smartctl -a /dev/sdX`. Skontrolujte Wear Level Indicator (zostávajúca životnosť SSD) a Media Wearout Indicator. Odporúčanie: SSD médiá minimalizovať čas pripojenia k systému, vykonať imaging čo najskôr, pred imaging vypnúť TRIM ak je to možné cez BIOS/firmware.
+Pomocou príkazov `lsblk`, `fdisk -l` a `lsusb` zistite, či ide o SSD, HDD, USB flash disk, SD kartu alebo špeciálne zariadenie (RAID pole). Typ média určuje, ktoré diagnostické nástroje sú relevantné.
 
-Pre HDD mechanické disky vykonajte kompletnú SMART diagnostiku pomocou `smartctl -a /dev/sdX`. Zaznamenajte kritické SMART atribúty: Reallocated Sector Count (počet realokovaných sektorov - ak >50, disk kriticky poškodený), Current Pending Sector Count (sektory čakajúce na realokovanie - ak >0, disk aktívne zlyháva), Uncorrectable Sector Count (neopraviteľné sektory), Spin Retry Count (problémy s roztočením platní), Temperature (teplota - ak >45°C, problém s chladením). Počúvajte zvuky disku: cvakanie = poškodené hlavičky (okamžite imaging), škripanie = poškodený motor, ticho = disk sa neroztočí (potrebná fyzická oprava). Zaznamenajte Power-On Hours (najazdené hodiny) a Start/Stop Count pre odhad opotrebenia.
+**2. Diagnostika SSD:**
 
-Pre Flash médiá (USB disky, SD/microSD karty) zistite informácie o Wear Leveling a Bad Block Management pomocou `smartctl -a /dev/sdX` ak podporuje SMART, inak použite `badblocks -sv /dev/sdX` na detekciu poškodených blokov (POZOR: read-only test, nie write test!). Zaznamenajte počet bad blocks - ak >100 blokov, médium silno opotrebované. Flash médiá typicky neposkytujú podrobné SMART údaje, preto sa spoliehame na Readability Test z Kroku 3. Odhadnite životnosť média na základe veku, intenzity používania a výsledkov testov.
+Zaznamenajte TRIM support status: `hdparm -I /dev/sdX | grep TRIM`. Ak je TRIM aktívny, zaznamenajte kritické varovanie – vymazané dáta môžu byť automaticky fyzicky odstránené. Skontrolujte Wear Level Indicator a Media Wearout Indicator pomocou `smartctl -a /dev/sdX`.
 
-Pre špeciálne prípady identifikujte typ a zaznamenajte kritické informácie. Šifrované médiá: Zistite typ šifrovania (BitLocker - Windows, LUKS - Linux, FileVault - macOS, VeraCrypt). Zaznamenajte KRITICKÉ: Bez recovery kľúča alebo hesla sú dáta úplne neprístupné. Opýtajte sa klienta na heslo/kľúč PRED začatím imaging procesu. Pre BitLocker: `manage-bde -status`. Pre LUKS: `cryptsetup luksDump /dev/sdX`. RAID polia: Zistite RAID level (0, 1, 5, 6, 10) pomocou `mdadm --detail /dev/mdX`, počet diskov v poli, stripe size, metadáta. Zaznamenajte KRITICKÉ: Potrebné všetky disky z RAID poľa, chýbajúci disk môže znemožniť recovery. Netypické súborové systémy: BTRFS, ZFS, ReFS vyžadujú špeciálne nástroje pre analýzu a recovery. Zaznamenajte verziu súborového systému a konfiguráciu (compression, snapshots, RAID-like features).
+**3. Diagnostika HDD:**
 
-Vytvorte technickú dokumentáciu do Case súboru obsahujúcu: Typ média (SSD/HDD/Flash), kapacita, model, sériové číslo, SMART status alebo Readability Test výsledky, špeciálne vlastnosti (TRIM, šifrovanie, RAID), identifikované riziká (zlyhaný disk, opotrebované flash, aktívny TRIM), odporúčania pre imaging proces (minimalizovať čas pripojenia, použiť ddrescue namiesto dd, disable TRIM), prognóza úspešnosti recovery (vysoká/stredná/nízka). Tieto poznámky sú kritické pre Krok 5 (Imaging) a ďalšie kroky.
+Vykonajte kompletnú SMART diagnostiku: `smartctl -a /dev/sdX`. Zaznamenajte kritické atribúty: Reallocated Sector Count (ak >50 – disk kriticky poškodený), Current Pending Sector Count (ak >0 – disk aktívne zlyháva), Uncorrectable Sector Count, Spin Retry Count a teplotu (ak >45°C). Počúvajte zvuky disku: cvakanie = poškodené hlavičky, škripanie = poškodený motor.
 
-Vytvorte zhrnutie limitácií pre klienta: Informujte klienta o technických limitáciách, ktoré môžu ovplyvniť úspešnosť obnovy. Napríklad: "SSD disk má aktívny TRIM - vymazané súbory mohli byť fyzicky odstránené, obnova nemusí byť úplná", "HDD má 500+ realokovaných sektorov - disk môže kedykoľvek úplne zlyhať, časový tlak na imaging", "BitLocker šifrovanie - bez recovery kľúča sú dáta neprístupné". Transparentná komunikácia limitácií predchádza neskôr sklamaniu a právnym sporom.
+**4. Diagnostika Flash médií:**
+
+Pre USB a SD karty použite `smartctl -a /dev/sdX` ak zariadenie podporuje SMART, inak `badblocks -sv /dev/sdX` (len read-only test). Ak je počet bad blocks >100, médium je silne opotrebované. Odhadnite životnosť na základe veku a výsledkov testov.
+
+**5. Špeciálne prípady:**
+
+Pre šifrované médiá zistite typ šifrovania (BitLocker: `manage-bde -status`, LUKS: `cryptsetup luksDump /dev/sdX`, FileVault, VeraCrypt) a zaznamenajte kritické upozornenie: bez recovery kľúča alebo hesla sú dáta úplne neprístupné – opýtajte sa klienta na kľúč pred pokračovaním.
+
+Pre RAID polia zistite RAID level, počet diskov a stripe size pomocou `mdadm --detail /dev/mdX`. Zaznamenajte kritické upozornenie: chýbajúci disk môže znemožniť recovery.
+
+Pre netypické súborové systémy (BTRFS, ZFS, ReFS) zaznamenajte verziu a konfiguráciu – vyžadujú špecializované nástroje.
+
+**6. Vytvorenie technickej dokumentácie a informovanie klienta:**
+
+Zdokumentujte do Case súboru: typ média, kapacitu, model, sériové číslo, SMART status, špeciálne vlastnosti (TRIM, šifrovanie, RAID), identifikované riziká a odporúčania pre ďalší postup. Informujte klienta o technických limitáciách – napríklad aktívny TRIM na SSD, kritický SMART status HDD alebo požiadavka na BitLocker recovery kľúč. Transparentná komunikácia predchádza neskoršiemu sklamaniu a právnym sporom.
 
 ## Výsledek
 
-Technická dokumentácia média kompletná s identifikovanými limitáciami, rizikami a odporúčaniami. Case súbor obsahuje: typ média, SMART/Readability status, špeciálne vlastnosti (TRIM/šifrovanie/RAID), kritické upozornenia, odporúčaný postup pre imaging, prognóza úspešnosti recovery. Klient informovaný o technických limitáciách. Workflow pripravený pokračovať do Kroku 3 (Readability Test) alebo Kroku 4 (Fyzická oprava) podľa stavu média.
+Technická dokumentácia média kompletná. Case súbor obsahuje typ média, SMART/Readability status, špeciálne vlastnosti (TRIM, šifrovanie, RAID), kritické upozornenia a odporúčaný postup. Klient informovaný o technických limitáciách a prognóze úspešnosti obnovy. Workflow pokračuje do Kroku 8 (Analýza súborového systému).
 
 ## Reference
 
-ISO/IEC 27037:2012 - Section 5.3 (Documentation and chain of custody)
-NIST SP 800-86 - Section 3.1.1.3 (Media characteristics and documentation)
-SMART Attribute Reference - ATA/ATAPI Command Set specifications
+ISO/IEC 27037:2012 – Section 5.3 (Documentation and chain of custody)
+NIST SP 800-86 – Section 3.1.1.3 (Media characteristics and documentation)
+SMART Attribute Reference – ATA/ATAPI Command Set specifications
 
 ## Stav
 
-K otestování
+K otestovaniu
 
 ## Nález
 
-(prázdne - vyplní sa po teste)
+(prázdne – vyplní sa po teste)
+
+---
+
+## Poznámky k implementácii
+
+Tento krok je v niektorých forenzných metodológiách integrovaný do Kroku 2 (Identifikácia média). V tejto implementácii je vyčlenený ako samostatný krok po verifikácii integrity (Krok 6), kedy sú k dispozícii kompletné výsledky readability testu a imaging procesu, čo umožňuje presnejšiu dokumentáciu technického stavu média a reálnejšiu prognózu úspešnosti obnovy.
+
+Krok nemá automatizovaný skript – vyžaduje odborné posúdenie technika, keďže niektoré indikátory (zvuky disku, vizuálne poškodenie) nie je možné automatizovane vyhodnotiť. Dokumentácia sa zapisuje priamo do Case súboru.
