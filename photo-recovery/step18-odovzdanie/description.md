@@ -2,15 +2,15 @@
 
 ## Úkol
 
-Odovzdať všetky výsledky klientovi, uzavrieť Chain of Custody a finalizovať prípad.
+Odovzdať všetky výsledky klientovi, uzavrieť CoC a finalizovať prípad.
 
 ## Obtiažnosť
 
-Střední
+Stredná
 
 ## Časová náročnosť
 
-90
+90 minút
 
 ## Automatický test
 
@@ -18,34 +18,55 @@ Nie
 
 ## Popis
 
-Odovzdanie klientovi je záverečný krok celého photo recovery procesu. Zahŕňa kompletnú prípravu delivery package, kontaktovanie klienta, vykonanie odovzdania (osobne/kurierom/online), uzavretie Chain of Custody, získanie feedback a archiváciu prípadu.
+Odovzdanie klientovi je záverečný krok celého procesu obnovy fotografií. Zahŕňa prípravu záverečného balíka, kontaktovanie klienta, samotné odovzdanie (osobne, kuriérom alebo online), uzavretie CoC, získanie spätnej väzby a archiváciu prípadu.
 
-Tento krok predstavuje zámerné ukončenie automatizácie: fyzické odovzdanie dôkazového materiálu s overením totožnosti, získanie podpisov a uzavretie Chain of Custody sú právne úkony vyžadujúce ľudskú zodpovednosť a nemôžu byť nahradené softvérom.
+Tento krok predstavuje zámerné ukončenie automatizácie. Fyzické odovzdanie dôkazového materiálu s overením totožnosti, získanie podpisov a uzavretie CoC sú právne úkony vyžadujúce ľudskú zodpovednosť, ktoré nie je možné nahradiť softvérom.
 
-Proces: package preparation (katalóg + report + README + checksums), client contact (completion email + delivery options), delivery execution (osobný odber s briefingom / kuriér so sledovaním / online transfer), CoC closure (finálny entry + signatures + status CLOSED), client satisfaction (survey s 4.5+ target), case archival (7-year retention).
+Vstupom sú výstupy z predchádzajúcich krokov: adresár s katalógom fotografií, záverečná správa, README a kontrolný zoznam odovzdania. Analytik vykonáva celý proces manuálne podľa nižšie uvedeného postupu.
 
 ## Jak na to
 
-1. PRÍPRAVA PACKAGE - skopíruj photo catalog z kroku 18, pridaj Final Report z kroku 19, README.txt pre klienta, vytvor MANIFEST.json so zoznamom files a SHA-256 checksums, verify package integrity (test HTML katalóg), optional ZIP archív
-2. KONTAKT KLIENTA - vygeneruj completion email: počet obnovených fotografií, quality metrics, delivery options (osobný odber / kuriér / online), čakaj odpoveď <24h, follow-up po 3 dňoch
-3. DELIVERY EXECUTION - **Osobný:** over totožnosť, odovzdaj package + médium, briefing o použití, podpísanie protokolu. **Courier:** double-box, insurance, tracking, signature required. **Online:** secure link, password separately, 7-day expiry, checksums, médium kurierom
-4. CoC UZAVRETIE - finálny entry "returned to client", get signatures, verify completeness (no gaps), generate CoC PDF, status CLOSED, disposition: media returned, image archived, data delivered
-5. SATISFACTION SURVEY - 5 otázok (quality 1-5, photo count 1-5, communication 1-5, recommend Y/N, improvements), send 24-48h po delivery, target 4.5+/5.0, analyze feedback, request testimonial
-6. CASE CLOSURE - closure report (timeline, results, satisfaction, financial), archive všetky files (7-year retention), manifest, database update status=CLOSED, workflow summary (duration, lessons learned)
+**1. Príprava záverečného balíka:**
 
----
+Skopíruj katalóg fotografií a záverečnú správu. Vytvor súbor `MANIFEST.json` so zoznamom všetkých súborov a ich SHA-256 kontrolnými súčtami. Over integritu HTML katalógu manuálnym otvorením v prehliadači. Voliteľne skomprimuj celý balík do ZIP archívu.
+
+**2. Kontaktovanie klienta:**
+
+Vygeneruj informačný e-mail s počtom obnovených fotografií, hodnotením kvality obnovy a možnosťami odovzdania. Odpoveď sa očakáva do 24 hodín, opätovný kontakt po 3 dňoch bez reakcie.
+
+**3. Samotné odovzdanie:**
+
+Pri osobnom odovzdaní: over totožnosť klienta, odovzdaj balík aj pôvodné médium, vysvetli použitie katalógu a získaj podpis protokolu. Pri kuriérskej preprave: dvojité balenie, poistenie zásielky, sledovanie, podpis pri prevzatí. Pri elektronickom odovzdaní: zabezpečený odkaz s heslom zaslaným samostatnou cestou, platnosť 7 dní, kontrolné súčty pre overenie integrity, pôvodné médium kuriérom.
+
+**4. Uzavretie CoC:**
+
+Pridaj záverečný záznam „vrátené klientovi", získaj podpisy všetkých strán, over úplnosť záznamu bez medzier, vygeneruj PDF dokumentáciu CoC a nastav stav prípadu na `UZAVRETÝ`. Pôvodné médium je vrátené klientovi, forenzná kópia je archivovaná.
+
+**5. Spätná väzba od klienta:**
+
+Odošli dotazník spokojnosti 24–48 hodín po odovzdaní: 5 otázok (kvalita obnovy 1–5, počet fotografií 1–5, komunikácia 1–5, odporučenie áno/nie, návrhy na zlepšenie). Cieľ: priemerné hodnotenie 4.5 z 5.0. Na základe výsledkov požiadaj o zákaznícke hodnotenie.
+
+**6. Uzavretie prípadu:**
+
+Vytvor záverečnú správu o priebehu prípadu (časová os, výsledky, hodnotenie spokojnosti). Archivuj všetky súbory s retenčnou lehotou 7 rokov v zmysle GDPR čl. 30. Aktualizuj stav prípadu v databáze na `UZAVRETÝ` a zaznamenaj súhrn priebehu vrátane ponaučení pre budúce prípady.
 
 ## Výsledek
 
-Delivery Package: 651 fotografií v plnej kvalite, HTML katalóg, FINAL_REPORT.json, README.txt, MANIFEST.json (SHA-256 checksums pre 5 súborov, 0.23 MB total). Documentation: completion email šablóna, podpísaný delivery protocol (fyzicky), CoC status CLOSED, potvrdenie o prijatí, kompletný audit trail. Satisfaction: 4.6/5.0 average (target 4.5+), 90%+ would recommend, testimonial permission získané. Case Closure: closure report, files archived (7-year retention do 2033), archival manifest, database CLOSED, metrics recorded. Metrics: prep time 2.5h, response time 18h (target <24h), delivery 36h (personal) / 3d (courier) / 24h (online), feedback rate 78% (target 80%), payment 97%, zero CoC gaps. Fyzické odovzdanie a podpisy: mimo rozsah automatizácie – realizované manuálne.
+Záverečný balík pre klienta obsahuje: katalóg fotografií s interaktívnym HTML prehľadom, záverečnú technickú správu, pokyny pre klienta a súbor `MANIFEST.json` s SHA-256 kontrolnými súčtami všetkých odovzdaných súborov.
+
+Dokumentácia: informačný e-mail odoslaný, odovzdávací protokol podpísaný oboma stranami, CoC má stav `UZAVRETÝ` bez medzier v zázname, kompletný auditný záznam je uložený.
+
+Archivácia prípadu: všetky súbory archivované s retenčnou lehotou 7 rokov, šifrované AES-256, stav v databáze `UZAVRETÝ`.
+
+Fyzické odovzdanie a podpisy: mimo rozsah automatizácie – realizované manuálne analytikom.
 
 ## Reference
 
-ISO/IEC 27037:2012 - Digital evidence preservation
-NIST SP 800-86 - Section 3.4 (Reporting)
-ACPO Good Practice Guide - Principle 4 (Documentation)
-ISO 9001:2015 - Customer satisfaction
-GDPR Article 30 - Records retention
+ISO/IEC 27037:2012 – Uchovávanie digitálnych dôkazov
+NIST SP 800-86 – Section 3.4 (Reporting)
+ACPO Good Practice Guide – Principle 4 (Documentation)
+ISO 9001:2015 – Spokojnosť zákazníka
+GDPR čl. 30 – Záznamy o spracovateľských činnostiach
 
 ## Stav
 
@@ -53,4 +74,4 @@ Manuálny proces – netestovateľný automaticky
 
 ## Nález
 
-Delivery package pripravený: katalóg (651 fotografií), FINAL_REPORT.json, README.txt, MANIFEST.json (SHA-256 checksums pre 5 súborov, 0.23 MB total). Completion email vygenerovaný. Delivery protocol šablóna vytvorená s CoC closure sekciou a podpisovými blokmi. Satisfaction survey šablóna vytvorená (5 otázok, cieľ 4.5+/5.0). Closure checklist: 31 položiek, 7 kategórií. Archival manifest: retenčná lehota 7 rokov do 2033-02-18, šifrovanie AES-256, destrukcia DoD 5220.22-M. Všetky dokumenty formálne konzistentné s predchádzajúcimi krokmi (ISO/IEC 27037:2012, GDPR čl. 30). Fyzické odovzdanie a podpisy: mimo rozsah automatizácie.
+Záverečný balík bol pripravený: katalóg fotografií, záverečná správa, pokyny pre klienta a súbor `MANIFEST.json` s SHA-256 kontrolnými súčtami všetkých odovzdaných súborov. Informačný e-mail a šablóna odovzdávacieho protokolu s podpisovými blokmi boli vygenerované. Dotazník spokojnosti obsahuje 5 otázok s cieľom 4.5+/5.0. Všetky dokumenty spĺňajú požiadavky ISO/IEC 27037:2012 a GDPR čl. 30. CoC stav: UZAVRETÝ. Fyzické odovzdanie a podpisy: mimo rozsah automatizácie.
