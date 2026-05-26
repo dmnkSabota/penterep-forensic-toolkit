@@ -1,0 +1,101 @@
+# forensic-script-module - system dependencies (all 3 scenarios)
+# Install: sudo apt-get install <package>
+#
+# Module covers: chain-of-custody, photo-recovery, malware-recovery.
+# Version: 1.2.0 - added libewf-tools to ptfilecarving (.e01 support),
+#                  reorganised by component for clarity.
+
+# Shared (Step 03 photo-rec / Step 04 chain-of-custody)
+# ptmediareadability
+util-linux              # lsblk, blockdev, mount, umount (usually pre-installed)
+e2fsprogs               # blkid                          (usually pre-installed)
+smartmontools           # smartctl
+hdparm                  # hdparm
+mdadm                   # mdadm                          (optional - RAID detection only)
+
+# Shared (Step 05 photo-rec / Step 05 chain-of-custody / Step 04 malware)
+# ptforensicimaging
+dc3dd                   # dc3dd                          (READABLE media imaging)
+gddrescue               # ddrescue                       (PARTIAL/damaged media imaging)
+libewf-tools            # ewfacquire                     (optional - .e01 acquisition)
+
+# Shared (Step 06 photo-rec / Step 06 chain-of-custody / Step 05 malware)
+# ptimageverification
+# (libewf-tools already listed - provides ewfverify for .e01 verification)
+
+# Step 07 photo-rec - ptfilesystemanalysis
+sleuthkit               # mmls, fsstat, fls
+
+# Step 08a photo-rec - ptfilesystemrecovery
+# (sleuthkit already listed - provides fls, icat)
+imagemagick             # identify
+libimage-exiftool-perl  # exiftool
+
+# Step 08b photo-rec - ptfilecarving
+testdisk                # photorec
+# (imagemagick already listed - provides identify)
+# (libewf-tools already listed - provides ewfexport for .e01 conversion)
+
+# Step 09 photo-rec - ptrecoveryconsolidation
+# No additional system tools required.
+
+# Step 10 photo-rec - ptintegrityvalidation
+# (imagemagick already listed)
+jpeginfo                # jpeginfo                       (optional - JPEG deep validation)
+pngcheck                # pngcheck                       (optional - PNG deep validation)
+libtiff-tools           # tiffinfo                       (optional - TIFF deep validation)
+
+# Step 11 photo-rec - ptrepairdecision
+# No additional system tools required (pure Python rule engine).
+
+# Step 12 photo-rec - ptphotorepair
+# (imagemagick already listed)
+libjpeg-turbo-progs     # jpegtran                       (optional - JPEG segment repair)
+
+# Step 13 photo-rec - ptexifanalysis
+# (libimage-exiftool-perl already listed)
+
+# MALWARE-RECOVERY SCENARIO (additions)
+
+# Step 03 malware - ptvolatilecollector
+lime-forensics-dkms     # LiME kernel module             (preferred RAM acquisition)
+# coreutils already provides: dd, sha256sum, ps
+iproute2                # ss                             (usually pre-installed)
+net-tools               # netstat                        (legacy fallback)
+
+# Step 06 malware - ptcocmanager
+# No additional system tools required (pure Python).
+
+# Step 07 malware - ptstaticanalysis
+binutils                # strings, objdump
+file                    # file -b                        (usually pre-installed)
+# (util-linux provides mount/umount - already listed)
+# (libimage-exiftool-perl already listed)
+
+# Step 09 malware - ptartefactextractor
+libregf-tools           # reglookup                      (Windows registry parsing)
+tshark                  # tshark                         (PCAP analysis)
+
+# Step 10 malware - ptiocreport
+# No additional system tools required (pure Python consolidator).
+
+# Step 11 malware - ptthreatintel
+# No additional system tools required (HTTP via Python requests).
+
+# Step 13 malware - manual archive script (inline Python)
+# No additional system tools required.
+
+# One-shot install (Debian/Ubuntu):
+#
+# sudo apt-get install -y \
+#   util-linux e2fsprogs smartmontools hdparm mdadm \
+#   dc3dd gddrescue libewf-tools \
+#   sleuthkit imagemagick libimage-exiftool-perl \
+#   testdisk \
+#   jpeginfo pngcheck libtiff-tools libjpeg-turbo-progs \
+#   lime-forensics-dkms iproute2 net-tools \
+#   binutils file \
+#   libregf-tools tshark
+#
+# Optional (RAID detection, deep validation, JPEG segment repair):
+#   mdadm jpeginfo pngcheck libtiff-tools libjpeg-turbo-progs
